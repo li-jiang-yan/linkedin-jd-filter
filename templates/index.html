@@ -172,9 +172,47 @@
                     }
                 }
 
-                for (const post of result.posts) {
-                    ResultElement.appendChild(new JobPost(post).createCardElement());
+                function GetSelectedSet(id) {
+                    return new Set(Array.from(document.getElementById(id).options).filter(option => option.selected).map(option => option.value));
                 }
+
+
+                function RefreshPosts() {
+                    ResultElement.replaceChildren();
+
+                    const companySet = GetSelectedSet("option-box-company-id");
+                    const senioritySet = GetSelectedSet("option-box-seniority-id");
+                    const typeSet = GetSelectedSet("option-box-type-id");
+                    const functionSet = GetSelectedSet("option-box-function-id");
+                    const industrySet = GetSelectedSet("option-box-industry-id");
+
+                    const postArray = result.posts.map(post => ({
+                        url: post.url,
+                        listdate: post.listdate,
+                        title: post.title,
+                        company: post.company,
+                        seniority: post.seniority,
+                        type_: post.type_,
+                        function_: post.function_,
+                        industries: post.industries
+                    })).filter(post => (
+                        companySet.has(post.company) &&
+                        senioritySet.has(post.seniority) &&
+                        typeSet.has(post.type_) &&
+                        functionSet.has(post.function_) &&
+                        industrySet.has(post.industries)
+                    ));
+
+                    for (const post of postArray) {
+                        ResultElement.appendChild(new JobPost(post).createCardElement());
+                    }
+                }
+
+                RefreshPosts();
+
+                document.querySelectorAll("select").forEach(selector => {
+                    selector.addEventListener("change", RefreshPosts);
+                });
 
             } else {
                 FormElement.reportValidity();
