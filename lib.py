@@ -21,12 +21,12 @@ def extract_text(html_doc):
     return "\n".join(lines)
 
 
-def count_tokens(texts):
+def tokenize(texts):
     vectorizer = CountVectorizer()
     X = vectorizer.fit_transform(texts)
-    tokens = vectorizer.get_feature_names_out()
-    counts = map(int, np.sum(np.where(X.toarray() > 0, 1, 0), axis=0))
-    return Counter(dict(zip(tokens, counts)))
+    features = vectorizer.get_feature_names_out()
+    counts = np.where(X.toarray() > 0, 1, 0)
+    return features, counts
 
 
 @crochet.wait_for(timeout=180.0)
@@ -55,18 +55,20 @@ def scrape_post_urls(keyword, location, number):
 def scrape_posts(urls):
     responses = itertools.chain.from_iterable(crawl_post(url["url"]) for url in urls)
     soups = list(BeautifulSoup(response["body"], "html.parser") for response in responses)
+    corpus = list(extract_text(soup.select_one("div.description__text").prettify()) for soup in soups)
+    tokens, counts = tokenize(corpus)
     posts = list({
         "url": urls[index]["url"],
         "listdate": urls[index]["listdate"],
         "title": soup.select_one("h3.sub-nav-cta__header").string,
         "company": soup.select_one("a.sub-nav-cta__optional-url").string,
-        "description": soup.select_one("div.description__text").prettify(),
         "seniority": soup.select_one("ul.description__job-criteria-list").find("h3", string=re.compile("Seniority level")).find_next_sibling("span").string.strip(),
         "type_": soup.select_one("ul.description__job-criteria-list").find("h3", string=re.compile("Employment type")).find_next_sibling("span").string.strip(),
         "function_": soup.select_one("ul.description__job-criteria-list").find("h3", string=re.compile("Job function")).find_next_sibling("span").string.strip(),
-        "industries": soup.select_one("ul.description__job-criteria-list").find("h3", string=re.compile("Industries")).find_next_sibling("span").string.strip()
+        "industries": soup.select_one("ul.description__job-criteria-list").find("h3", string=re.compile("Industries")).find_next_sibling("span").string.strip(),
+        "tokens": list(tokens[j] for j, k in enumerate(counts[index]) if k),
     } for index, soup in enumerate(soups))
-    return posts
+    return list(tokens), posts
 
 
 if __name__ == "__main__":

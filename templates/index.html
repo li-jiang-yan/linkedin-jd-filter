@@ -119,7 +119,7 @@
                     CreateOptionFormGroupElement("option-box-type-id", "Employment type", result.posts.map(row => row.type_), true),
                     CreateOptionFormGroupElement("option-box-function-id", "Job function", result.posts.map(row => row.function_), true),
                     CreateOptionFormGroupElement("option-box-industry-id", "Industries", result.posts.map(row => row.industries), true),
-                    CreateOptionFormGroupElement("option-box-token-id", "Preferred tokens", [], false)
+                    CreateOptionFormGroupElement("option-box-token-id", "Preferred tokens", result.tokens, false)
                 );
 
                 $(".selectpicker").selectpicker("refresh");
