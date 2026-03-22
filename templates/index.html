@@ -124,10 +124,15 @@
 
                 $(".selectpicker").selectpicker("refresh");
 
+                function GetSelectedSet(id) {
+                    return new Set(Array.from(document.getElementById(id).options).filter(option => option.selected).map(option => option.value));
+                }
+
                 // Render ResultElement
                 class JobPost {
                     constructor(post) {
                         this.post = post;
+                        this.post.tokens.sort();
                     }
 
                     createTitleElement() {
@@ -160,6 +165,9 @@
                         result.appendChild(this.createAttributeElement("Employment type", this.post.type_));
                         result.appendChild(this.createAttributeElement("Job function", this.post.function_));
                         result.appendChild(this.createAttributeElement("Industries", this.post.industries));
+                        if (this.post.tokens.length > 0) {
+                            result.appendChild(this.createAttributeElement("Preferred tokens", this.post.tokens.join(", ")));
+                        }
                         result.classList.add("card-body");
                         return result;
                     }
@@ -172,11 +180,6 @@
                     }
                 }
 
-                function GetSelectedSet(id) {
-                    return new Set(Array.from(document.getElementById(id).options).filter(option => option.selected).map(option => option.value));
-                }
-
-
                 function RefreshPosts() {
                     ResultElement.replaceChildren();
 
@@ -185,6 +188,7 @@
                     const typeSet = GetSelectedSet("option-box-type-id");
                     const functionSet = GetSelectedSet("option-box-function-id");
                     const industrySet = GetSelectedSet("option-box-industry-id");
+                    const tokenSet = GetSelectedSet("option-box-token-id");
 
                     const postArray = result.posts.map(post => ({
                         url: post.url,
@@ -194,7 +198,8 @@
                         seniority: post.seniority,
                         type_: post.type_,
                         function_: post.function_,
-                        industries: post.industries
+                        industries: post.industries,
+                        tokens: [...tokenSet.intersection(new Set(post.tokens))]
                     })).filter(post => (
                         companySet.has(post.company) &&
                         senioritySet.has(post.seniority) &&
@@ -202,6 +207,8 @@
                         functionSet.has(post.function_) &&
                         industrySet.has(post.industries)
                     ));
+
+                    postArray.sort((a, b) => (b.tokens.length - a.tokens.length));
 
                     for (const post of postArray) {
                         ResultElement.appendChild(new JobPost(post).createCardElement());
