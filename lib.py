@@ -62,7 +62,7 @@ def scrape_post_urls(keyword, location, number):
 def scrape_posts(urls):
     responses = itertools.chain.from_iterable(crawl_post(url["url"]) for url in urls)
     soups = list(BeautifulSoup(response["body"], "html.parser") for response in responses)
-    corpus = list(extract_text(soup.select_one("div.description__text").prettify()) for soup in soups if soup)
+    corpus = list(extract_text(soup.select_one("div.description__text").prettify()) for soup in soups if soup.select_one("div.description__text"))
     tokens, counts = tokenize(corpus)
     posts = list({
         "url": urls[index]["url"],
