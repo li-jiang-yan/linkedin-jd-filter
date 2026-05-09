@@ -31,6 +31,11 @@ def tokenize(texts):
     return features, counts
 
 
+def calculate_similarities(count_matrix):
+    item_totals = np.sum(count_matrix, axis=0)
+    return count_matrix.T @ count_matrix / np.sqrt(np.outer(item_totals, item_totals))
+
+
 @crochet.wait_for(timeout=180.0)
 def crawl_post(url):
     crawler = runner.create_crawler(PostSpider)
@@ -70,7 +75,8 @@ def scrape_posts(urls):
         "industries": soup.select_one("ul.description__job-criteria-list").find("h3", string=re.compile("Industries")).find_next_sibling("span").string.strip(),
         "tokens": list(tokens[j] for j, k in enumerate(counts[index]) if k),
     } for index, soup in enumerate(soups))
-    return list(tokens), posts
+    similarities = calculate_similarities(counts)
+    return list(tokens), posts, similarities.tolist()
 
 
 if __name__ == "__main__":

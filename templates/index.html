@@ -113,19 +113,53 @@
                     return result;
                 }
 
+                function CreateOptionSampElement(id, header) {
+                    const result = document.createElement("div");
+
+                    // Create and add label tag
+                    const newLabel = document.createElement("label");
+                    newLabel.innerText = `${header}:`;
+                    newLabel.htmlFor = id;
+                    result.appendChild(newLabel);
+
+                    // Create and add div tag
+                    const newDiv = document.createElement("div");
+                    newDiv.classList.add("text-bg-light");
+
+                    // Create and add samp tag
+                    const newSamp = document.createElement("samp");
+                    newSamp.id = id;
+                    newDiv.appendChild(newSamp);
+                    result.appendChild(newDiv);
+
+                    return result;
+                }
+
                 OptionFormElement.append(
                     CreateOptionFormGroupElement("option-box-company-id", "Company", result.posts.map(row => row.company), true),
                     CreateOptionFormGroupElement("option-box-seniority-id", "Seniority level", result.posts.map(row => row.seniority), true),
                     CreateOptionFormGroupElement("option-box-type-id", "Employment type", result.posts.map(row => row.type_), true),
                     CreateOptionFormGroupElement("option-box-function-id", "Job function", result.posts.map(row => row.function_), true),
                     CreateOptionFormGroupElement("option-box-industry-id", "Industries", result.posts.map(row => row.industries), true),
-                    CreateOptionFormGroupElement("option-box-token-id", "Preferred tokens", result.tokens, false)
+                    CreateOptionFormGroupElement("option-box-token-id", "Preferred tokens", result.tokens, false),
+                    CreateOptionSampElement("option-box-token-suggestion-id", "Token suggestions"),
                 );
 
                 $(".selectpicker").selectpicker("refresh");
 
                 function GetSelectedSet(id) {
                     return new Set(Array.from(document.getElementById(id).options).filter(option => option.selected).map(option => option.value));
+                }
+
+                function GetUnselectedArray(id) {
+                    return Array.from(document.getElementById(id).options).filter(option => !option.selected).map(option => option.value);
+                }
+
+                function CalculateSimilarity(a, b) {
+                    const indexA = result.tokens.indexOf(a);
+                    const indexB = result.tokens.indexOf(b);
+
+                    return result.similarities[indexA][indexB];
                 }
 
                 // Render ResultElement
@@ -215,10 +249,31 @@
                     }
                 }
 
+                function RefreshTokenSuggestions() {
+                    const tokenSet = GetSelectedSet("option-box-token-id");
+
+                    // Also update token suggestions
+                    const tokenArray = Array.from(tokenSet);
+                    const tokenSuggestionPreElement = document.getElementById("option-box-token-suggestion-id");
+
+                    if (tokenArray.length > 0) {
+                        tokenSuggestionPreElement.innerText = GetUnselectedArray("option-box-token-id").map(token => ({
+                            token: token,
+                            score: tokenArray.reduce(
+                                (accumulator, currentValue) => accumulator + CalculateSimilarity(token, currentValue),
+                                0
+                            )
+                        })).sort((a, b) => b.score - a.score).slice(0, 100).map(entry => entry.token).join(", ");
+                    } else {
+                        tokenSuggestionPreElement.innerText = "";
+                    }
+                }
+
                 RefreshPosts();
 
                 document.querySelectorAll("select").forEach(selector => {
                     selector.addEventListener("change", RefreshPosts);
+                    selector.addEventListener("change", RefreshTokenSuggestions);
                 });
 
             } else {

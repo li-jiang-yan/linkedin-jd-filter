@@ -20,11 +20,12 @@ def extract():
     number = int(data["number"])
 
     urls = lib.scrape_post_urls(keyword, location, number)
-    tokens, posts = lib.scrape_posts(urls)
+    tokens, posts, similarities = lib.scrape_posts(urls)
 
     return jsonify( {
         "tokens" : tokens,
-        "posts" : posts
+        "posts" : posts,
+        "similarities" : similarities,
     } )
 
 
